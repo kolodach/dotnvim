@@ -53,4 +53,11 @@ if is_available("telescope.nvim") then
   maps.n["<leader>fh"] = { "<cmd>Telescope help_tags<cr>", desc = "Find Help" }
 end
 
+-- Bufferline
+if is_available("bufferline.nvim") then
+  maps.n["<C-[>"] = { "<cmd>BufferLineCyclePrev<cr>" }
+  maps.n["<C-]>"] = { "<cmd>BufferLineCycleNext<cr>" }
+  maps.n["<C-x>"] = { "<cmd>bd<cr>" }
+end
+
 utils.set_mappings(maps)

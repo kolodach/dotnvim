@@ -14,7 +14,7 @@ return {
 				    text_align = "left",
 				  }
         },
-        separator_style = {nil, nil},
+        separator_style = {"", ""},
         style_preset = {
           buffelrline.style_preset.no_italic,
         },
