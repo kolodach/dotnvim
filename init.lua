@@ -1,7 +1,7 @@
 for _, source in ipairs {
   "bootstrap",
-  "lua.lazy",
   "options",
+  "lazy-nvim",
   "autocmds",
   "mappings",
   "ui",

@@ -47,3 +47,8 @@ require("catppuccin").setup({
 
 -- setup must be called before loading
 vim.cmd.colorscheme "catppuccin"
+
+-- customize diagnistics window
+vim.diagnostic.config {     
+    float = { border = "rounded" }, 
+}
