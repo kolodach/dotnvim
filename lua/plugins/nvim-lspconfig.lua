@@ -1,121 +1,204 @@
 return {
   -- LSP - Quickstart configs for Nvim LSP
   "neovim/nvim-lspconfig",
-  event = {"BufReadPre", "BufNewFile"},
-  lazy = true,
-  dependencies = { -- Mason
-  -- Portable package manager for Neovim that runs everywhere Neovim runs.
-  -- Easily install and manage LSP servers, DAP servers, linters, and formatters.
-  {"williamboman/mason.nvim"}, {"williamboman/mason-lspconfig.nvim"}, -- Autocomplete
-  -- A completion plugin for neovim coded in Lua.
-  {
+  dependencies = {
+    "williamboman/mason.nvim",
+    "williamboman/mason-lspconfig.nvim",
+    "folke/neodev.nvim",
+    "hrsh7th/nvim-cmp",
+    {
+      "jose-elias-alvarez/null-ls.nvim",
+      opts = function() return { on_attach = require("lsp").on_attach } end,
+    },
+    "jay-babu/mason-null-ls.nvim",
+    {
       "hrsh7th/nvim-cmp",
-      dependencies = {"L3MON4D3/LuaSnip", "hrsh7th/cmp-nvim-lsp", "hrsh7th/cmp-path", "hrsh7th/cmp-buffer",
-                      "saadparwaiz1/cmp_luasnip"}
-  }},
-  opts = {
-      -- Automatically format on save
-      autoformat = true,
-      -- options for vim.lsp.buf.format
-      -- `bufnr` and `filter` is handled by the LazyVim formatter,
-      -- but can be also overridden when specified
-      format = {
-          formatting_options = nil,
-          timeout_ms = nil
-      },
-      -- LSP Server Settings
-      servers = {
-          jsonls = {},
-          dockerls = {},
-          bashls = {},
-          gopls = {},
-          ruff_lsp = {},
-          vimls = {},
-          yamlls = {}
-      },
-      -- you can do any additional lsp server setup here
-      -- return true if you don"t want this server to be setup with lspconfig
-      setup = {
-          -- example to setup with typescript.nvim
-          -- tsserver = function(_, opts)
-          --   require("typescript").setup({ server = opts })
-          --   return true
-          -- end,
-          -- Specify * to use this function as a fallback for any server
-          -- ["*"] = function(server, opts) end,
-      }
+      dependencies = {
+        { "hrsh7th/cmp-nvim-lua", "hrsh7th/cmp-nvim-lsp", "hrsh7th/cmp-buffer",
+          "hrsh7th/cmp-path" }, { "onsails/lspkind.nvim" } }
+    } -- cmp sources plugins
   },
   config = function(_, opts)
-      -- Diagnostics icons
-      -- local lsp = require "astronvim.utils.lsp"
-      local utils = require "utils"
-      local get_icon = utils.get_icon
-      local signs = {
-        { name = "DiagnosticSignError", text = get_icon "DiagnosticError", texthl = "DiagnosticSignError" },
-        { name = "DiagnosticSignWarn", text = get_icon "DiagnosticWarn", texthl = "DiagnosticSignWarn" },
-        { name = "DiagnosticSignHint", text = get_icon "DiagnosticHint", texthl = "DiagnosticSignHint" },
-        { name = "DiagnosticSignInfo", text = get_icon "DiagnosticInfo", texthl = "DiagnosticSignInfo" },
-        { name = "DapStopped", text = get_icon "DapStopped", texthl = "DiagnosticWarn" },
-        { name = "DapBreakpoint", text = get_icon "DapBreakpoint", texthl = "DiagnosticInfo" },
-        { name = "DapBreakpointRejected", text = get_icon "DapBreakpointRejected", texthl = "DiagnosticError" },
-        { name = "DapBreakpointCondition", text = get_icon "DapBreakpointCondition", texthl = "DiagnosticInfo" },
-        { name = "DapLogPoint", text = get_icon "DapLogPoint", texthl = "DiagnosticInfo" },
+    local utils = require "utils"
+    local get_icon = utils.get_icon
+    local signs = {
+      { name = "DiagnosticSignError",    text = get_icon "DiagnosticError",        texthl = "DiagnosticSignError" },
+      { name = "DiagnosticSignWarn",     text = get_icon "DiagnosticWarn",         texthl = "DiagnosticSignWarn" },
+      { name = "DiagnosticSignHint",     text = get_icon "DiagnosticHint",         texthl = "DiagnosticSignHint" },
+      { name = "DiagnosticSignInfo",     text = get_icon "DiagnosticInfo",         texthl = "DiagnosticSignInfo" },
+      { name = "DapStopped",             text = get_icon "DapStopped",             texthl = "DiagnosticWarn" },
+      { name = "DapBreakpoint",          text = get_icon "DapBreakpoint",          texthl = "DiagnosticInfo" },
+      { name = "DapBreakpointRejected",  text = get_icon "DapBreakpointRejected",  texthl = "DiagnosticError" },
+      { name = "DapBreakpointCondition", text = get_icon "DapBreakpointCondition", texthl = "DiagnosticInfo" },
+      { name = "DapLogPoint",            text = get_icon "DapLogPoint",            texthl = "DiagnosticInfo" },
+    }
+
+    for _, sign in ipairs(signs) do
+      vim.fn.sign_define(sign.name, sign)
+    end
+
+    require("mason").setup({
+      PATH = "prepend",
+      ui = {
+        icons = {
+          package_pending = " ",
+          package_installed = "󰄳 ",
+          package_uninstalled = " 󰚌"
+        },
+
+        keymaps = {
+          toggle_server_expand = "<CR>",
+          install_server = "i",
+          update_server = "u",
+          check_server_version = "c",
+          update_all_servers = "U",
+          check_outdated_servers = "C",
+          uninstall_server = "X",
+          cancel_installation = "<C-c>"
+        }
+      },
+
+      max_concurrent_installers = 10
+    })
+    require("mason-lspconfig").setup()
+    require("mason-null-ls").setup({
+      ensure_installed = {
+        -- Opt to list sources here, when available in mason.
+      },
+      automatic_installation = false,
+      handlers = {},
+    })
+    require("null-ls").setup({
+      sources = {
+        -- Anything not supported by mason.
       }
+    })
 
-      for _, sign in ipairs(signs) do
-        vim.fn.sign_define(sign.name, sign)
-      end
+    local servers = {
+      -- clangd = {},
+      -- gopls = {},
+      -- pyright = {},
+      -- rust_analyzer = {},
+      -- tsserver = {},
+      -- html = { filetypes = { 'html', 'twig', 'hbs'} },
 
-      -- Language servers
-      local servers = opts.servers
-      local capabilities = require("cmp_nvim_lsp").default_capabilities(vim.lsp.protocol.make_client_capabilities())
+      lua_ls = {
+        Lua = {
+          workspace = { checkThirdParty = false },
+          telemetry = { enable = false },
+        },
+      },
+    }
 
-      local function setup(server)
-          local server_opts = vim.tbl_deep_extend("force", {
-              capabilities = vim.deepcopy(capabilities)
-          }, servers[server] or {})
+    -- Setup neovim lua configuration
+    require('neodev').setup()
 
-          if opts.setup[server] then
-              if opts.setup[server](server, server_opts) then
-                  return
-              end
-          elseif opts.setup["*"] then
-              if opts.setup["*"](server, server_opts) then
-                  return
-              end
-          end
-          require("lspconfig")[server].setup(server_opts)
-      end
+    -- nvim-cmp supports additional completion capabilities, so broadcast that to servers
+    local capabilities = vim.lsp.protocol.make_client_capabilities()
+    capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
 
-      -- temp fix for lspconfig rename
-      -- https://github.com/neovim/nvim-lspconfig/pull/2439
-      local mappings = require("mason-lspconfig.mappings.server")
-      if not mappings.lspconfig_to_package.lua_ls then
-          mappings.lspconfig_to_package.lua_ls = "lua-language-server"
-          mappings.package_to_lspconfig["lua-language-server"] = "lua_ls"
-      end
+    -- Ensure the servers above are installed
+    local mason_lspconfig = require 'mason-lspconfig'
 
-      local mlsp = require("mason-lspconfig")
-      local available = mlsp.get_available_servers()
+    mason_lspconfig.setup {
+      ensure_installed = vim.tbl_keys(servers),
+    }
 
-      local ensure_installed = {} ---@type string[]
-      for server, server_opts in pairs(servers) do
-          if server_opts then
-              server_opts = server_opts == true and {} or server_opts
-              -- run manual setup if mason=false or if this is a server that cannot be installed with mason-lspconfig
-              if server_opts.mason == false or not vim.tbl_contains(available, server) then
-                  setup(server)
-              else
-                  ensure_installed[#ensure_installed + 1] = server
-              end
-          end
-      end
+    mason_lspconfig.setup_handlers {
+      function(server_name)
+        require("lspconfig")[server_name].setup {
+          on_attach = require("lsp").on_attach
+        }
+      end,
+    }
 
-      require("mason").setup()
-      require("mason-lspconfig").setup({
-          ensure_installed = ensure_installed,
-          automatic_installation = true
-      })
-      require("mason-lspconfig").setup_handlers({setup})
+    -- local cmp = require "cmp"
+    --
+    -- local function has_words_before()
+    --   local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+    --   return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match "%s" == nil
+    -- end
+    --
+    -- local function border(hl_name)
+    --   return { { "╭", hl_name }, { "─", hl_name }, { "╮", hl_name }, { "│", hl_name }, { "╯", hl_name },
+    --     { "─", hl_name }, { "╰", hl_name }, { "│", hl_name } }
+    -- end
+    --
+    -- local lspkind = require('lspkind')
+    --
+    -- local options = {
+    --   preselect = cmp.PreselectMode.None,
+    --   confirm_opts = {
+    --     behavior = cmp.ConfirmBehavior.Replace,
+    --     select = false,
+    --   },
+    --   formatting = {
+    --     format = lspkind.cmp_format({
+    --       mode = 'symbol',       -- show only symbol annotations
+    --       maxwidth = 50,         -- prevent the popup from showing more than provided characters (e.g 50 will not show more than 50 characters)
+    --       ellipsis_char = '...', -- when popup menu exceed maxwidth, the truncated part would show ellipsis_char instead (must define maxwidth first)
+    --
+    --       -- The function below will be called before any actual modifications from lspkind
+    --       -- so that you can provide more controls on popup customization. (See [#30](https://github.com/onsails/lspkind-nvim/pull/30))
+    --       before = function(entry, vim_item)
+    --         return vim_item
+    --       end
+    --     })
+    --   },
+    --   completion = {
+    --     completeopt = "menu,menuone"
+    --   },
+    --
+    --   window = {
+    --     completion = {
+    --       border = 'rounded',
+    --       winhighlight = 'Normal:Normal,FloatBorder:Normal,CursorLine:Visual,Search:None',
+    --       zindex = 1001,
+    --       scrolloff = 0,
+    --       col_offset = 0,
+    --       side_padding = 1,
+    --       scrollbar = false
+    --     },
+    --     documentation = {
+    --       border = border "CmpDocBorder",
+    --       winhighlight = "Normal:CmpDoc"
+    --     }
+    --   },
+    --   mapping = {
+    --     ["<Up>"] = cmp.mapping.select_prev_item { behavior = cmp.SelectBehavior.Select },
+    --     ["<Down>"] = cmp.mapping.select_next_item { behavior = cmp.SelectBehavior.Select },
+    --     -- ["<C-k>"] = cmp.mapping.select_prev_item { behavior = cmp.SelectBehavior.Insert },
+    --     -- ["<C-j>"] = cmp.mapping.select_next_item { behavior = cmp.SelectBehavior.Insert },
+    --     ["<C-k>"] = cmp.mapping(cmp.mapping.scroll_docs(-4), { "i", "c" }),
+    --     ["<C-j>"] = cmp.mapping(cmp.mapping.scroll_docs(4), { "i", "c" }),
+    --     ["<C-Space>"] = cmp.mapping(cmp.mapping.complete(), { "i", "c" }),
+    --     ["<C-y>"] = cmp.config.disable,
+    --     ["<C-e>"] = cmp.mapping { i = cmp.mapping.abort(), c = cmp.mapping.close() },
+    --     ["<CR>"] = cmp.mapping.confirm { select = false },
+    --     ["<Tab>"] = cmp.mapping(function(fallback)
+    --         if cmp.visible() then
+    --           cmp.select_next_item()
+    --         elseif has_words_before() then
+    --           cmp.complete()
+    --         else
+    --           fallback()
+    --         end
+    --     end, { "i", "s" }),
+    --     ["<S-Tab>"] = cmp.mapping(function(fallback)
+    --         if cmp.visible() then
+    --           cmp.select_prev_item()
+    --         else
+    --           fallback()
+    --         end
+    --     end, { "i", "s" }),
+    --   },
+    --   sources = cmp.config.sources {
+    --     { name = "nvim_lsp", priority = 1000 },
+    --     { name = "buffer",   priority = 750 },
+    --     { name = "path",     priority = 500 },
+    --   },
+    -- }
+    --
+    -- require("cmp").setup(options)
   end
 }

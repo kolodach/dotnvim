@@ -1,124 +1,111 @@
 return {
-    -- load luasnips + cmp related in insert mode only
-  "hrsh7th/nvim-cmp",
-  event = "InsertEnter",
-  dependencies = {{
-      -- snippet plugin
-      "L3MON4D3/LuaSnip",
-      dependencies = "rafamadriz/friendly-snippets",
-      opts = {
-          history = true,
-          updateevents = "TextChanged,TextChangedI"
-      },
-      config = function(_, opts)
-          require("luasnip").config.set_config(opts)
-
-          -- vscode format
-          require("luasnip.loaders.from_vscode").lazy_load()
-          require("luasnip.loaders.from_vscode").lazy_load {
-              paths = vim.g.vscode_snippets_path or ""
-          }
-
-          -- snipmate format
-          require("luasnip.loaders.from_snipmate").load()
-          require("luasnip.loaders.from_snipmate").lazy_load {
-              paths = vim.g.snipmate_snippets_path or ""
-          }
-
-          -- lua format
-          require("luasnip.loaders.from_lua").load()
-          require("luasnip.loaders.from_lua").lazy_load {
-              paths = vim.g.lua_snippets_path or ""
-          }
-
-          vim.api.nvim_create_autocmd("InsertLeave", {
-              callback = function()
-                  if require("luasnip").session.current_nodes[vim.api.nvim_get_current_buf()] and
-                      not require("luasnip").session.jump_active then
-                      require("luasnip").unlink_current()
-                  end
-              end
-          })
-      end
+  {
+    "L3MON4D3/LuaSnip",
+    build = vim.fn.has "win32" == 0
+        and "echo 'NOTE: jsregexp is optional, so not a big deal if it fails to build\n'; make install_jsregexp"
+        or nil,
+    dependencies = { "rafamadriz/friendly-snippets" },
+    opts = {
+      history = true,
+      delete_check_events = "TextChanged",
+      region_check_events = "CursorMoved",
+    },
+    config = function(_, opts)
+      if opts then require("luasnip").config.setup(opts) end
+      vim.tbl_map(function(type) require("luasnip.loaders.from_" .. type).lazy_load() end, { "vscode", "snipmate", "lua" })
+    end
   },
-                  {"saadparwaiz1/cmp_luasnip", "hrsh7th/cmp-nvim-lua", "hrsh7th/cmp-nvim-lsp", "hrsh7th/cmp-buffer",
-                   "hrsh7th/cmp-path"}}, -- cmp sources plugins
-  opts = function()
+  {
+    "hrsh7th/nvim-cmp",
+    dependencies = {
+      "saadparwaiz1/cmp_luasnip",
+      "hrsh7th/cmp-buffer",
+      "hrsh7th/cmp-path",
+      "hrsh7th/cmp-nvim-lsp",
+    },
+    event = "InsertEnter",
+    opts = function()
       local cmp = require "cmp"
+      local snip_status_ok, luasnip = pcall(require, "luasnip")
+      local lspkind_status_ok, lspkind = pcall(require, "lspkind")
+      local utils = require "utils"
+      if not snip_status_ok then return end
+      local border_opts = {
+        border = "rounded",
+        winhighlight = "Normal:NormalFloat,FloatBorder:FloatBorder,CursorLine:PmenuSel,Search:None",
+      }
 
       local function has_words_before()
-        local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+        local line, col = (unpack or table.unpack)(vim.api.nvim_win_get_cursor(0))
         return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match "%s" == nil
       end
 
-
-      local function border(hl_name)
-          return {{"╭", hl_name}, {"─", hl_name}, {"╮", hl_name}, {"│", hl_name}, {"╯", hl_name},
-                  {"─", hl_name}, {"╰", hl_name}, {"│", hl_name}}
-      end
-
-      local options = {
-          completion = {
-              completeopt = "menu,menuone"
-          },
-
-          window = {
-              completion = {
-                  winhighlight = "Normal:CmpPmenu,CursorLine:CmpSel,Search:PmenuSel",
-                  scrollbar = false
-              },
-              documentation = {
-                  border = border "CmpDocBorder",
-                  winhighlight = "Normal:CmpDoc"
-              }
-          },
-
-          snippet = {
-              expand = function(args)
-                  require("luasnip").lsp_expand(args.body)
-              end
-          },
-
-          mapping = {
-            ["<Up>"] = cmp.mapping.select_prev_item { behavior = cmp.SelectBehavior.Select },
-            ["<Down>"] = cmp.mapping.select_next_item { behavior = cmp.SelectBehavior.Select },
-            ["<C-p>"] = cmp.mapping.select_prev_item { behavior = cmp.SelectBehavior.Insert },
-            ["<C-n>"] = cmp.mapping.select_next_item { behavior = cmp.SelectBehavior.Insert },
-            ["<C-k>"] = cmp.mapping.select_prev_item { behavior = cmp.SelectBehavior.Insert },
-            ["<C-j>"] = cmp.mapping.select_next_item { behavior = cmp.SelectBehavior.Insert },
-            ["<C-u>"] = cmp.mapping(cmp.mapping.scroll_docs(-4), { "i", "c" }),
-            ["<C-d>"] = cmp.mapping(cmp.mapping.scroll_docs(4), { "i", "c" }),
-            ["<C-Space>"] = cmp.mapping(cmp.mapping.complete(), { "i", "c" }),
-            ["<C-y>"] = cmp.config.disable,
-            ["<C-e>"] = cmp.mapping { i = cmp.mapping.abort(), c = cmp.mapping.close() },
-            ["<CR>"] = cmp.mapping.confirm { select = false },
-            ["<Tab>"] = cmp.mapping(function(fallback)
-              if cmp.visible() then
-                cmp.select_next_item()
-              elseif has_words_before() then
-                cmp.complete()
-              else
-                fallback()
-              end
-            end, { "i", "s" }),
-            ["<S-Tab>"] = cmp.mapping(function(fallback)
-              if cmp.visible() then
-                cmp.select_prev_item()
-              else
-                fallback()
-              end
-            end, { "i", "s" }),
-          },
-          sources = cmp.config.sources {
-            { name = "nvim_lsp", priority = 1000 },
-            { name = "luasnip", priority = 750 },
-            { name = "buffer", priority = 500 },
-            { name = "path", priority = 250 },
-          },
-        }
-      return options
-  end,
-  config = function(_, opts)
-      require("cmp").setup(opts)
-  end
+      return {
+        enabled = true,
+        preselect = cmp.PreselectMode.None,
+        formatting = {
+          fields = { "kind", "abbr", "menu" },
+          format = lspkind_status_ok and lspkind.cmp_format(utils.plugin_opts "lspkind.nvim") or nil,
+        },
+        snippet = {
+          expand = function(args) luasnip.lsp_expand(args.body) end,
+        },
+        duplicates = {
+          nvim_lsp = 1,
+          luasnip = 1,
+          cmp_tabnine = 1,
+          buffer = 1,
+          path = 1,
+        },
+        confirm_opts = {
+          behavior = cmp.ConfirmBehavior.Replace,
+          select = false,
+        },
+        window = {
+          completion = cmp.config.window.bordered(border_opts),
+          documentation = cmp.config.window.bordered(border_opts),
+        },
+        mapping = {
+          ["<Up>"] = cmp.mapping.select_prev_item { behavior = cmp.SelectBehavior.Select },
+          ["<Down>"] = cmp.mapping.select_next_item { behavior = cmp.SelectBehavior.Select },
+          ["<C-p>"] = cmp.mapping.select_prev_item { behavior = cmp.SelectBehavior.Insert },
+          ["<C-n>"] = cmp.mapping.select_next_item { behavior = cmp.SelectBehavior.Insert },
+          ["<C-k>"] = cmp.mapping.select_prev_item { behavior = cmp.SelectBehavior.Insert },
+          ["<C-j>"] = cmp.mapping.select_next_item { behavior = cmp.SelectBehavior.Insert },
+          ["<C-u>"] = cmp.mapping(cmp.mapping.scroll_docs(-4), { "i", "c" }),
+          ["<C-d>"] = cmp.mapping(cmp.mapping.scroll_docs(4), { "i", "c" }),
+          ["<C-Space>"] = cmp.mapping(cmp.mapping.complete(), { "i", "c" }),
+          ["<C-y>"] = cmp.config.disable,
+          ["<C-e>"] = cmp.mapping { i = cmp.mapping.abort(), c = cmp.mapping.close() },
+          ["<CR>"] = cmp.mapping.confirm { select = false },
+          ["<Tab>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+              cmp.select_next_item()
+            elseif luasnip.expand_or_jumpable() then
+              luasnip.expand_or_jump()
+            elseif has_words_before() then
+              cmp.complete()
+            else
+              fallback()
+            end
+          end, { "i", "s" }),
+          ["<S-Tab>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+              cmp.select_prev_item()
+            elseif luasnip.jumpable(-1) then
+              luasnip.jump(-1)
+            else
+              fallback()
+            end
+          end, { "i", "s" }),
+        },
+        sources = cmp.config.sources {
+          { name = "nvim_lsp", priority = 1000 },
+          { name = "luasnip",  priority = 750 },
+          { name = "buffer",   priority = 500 },
+          { name = "path",     priority = 250 },
+        },
+      }
+    end,
+  },
 }

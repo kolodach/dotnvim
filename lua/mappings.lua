@@ -59,9 +59,9 @@ end
 
 -- Bufferline
 if is_available("bufferline.nvim") then
-  maps.n["<C-[>"] = { "<cmd>BufferLineCyclePrev<cr>" }
-  maps.n["<C-]>"] = { "<cmd>BufferLineCycleNext<cr>" }
-  maps.n["<C-x>"] = { "<cmd>bd<cr>" }
+  maps.n["<leader>h"] = { "<cmd>BufferLineCyclePrev<cr>" }
+  maps.n["<leader>l"] = { "<cmd>BufferLineCycleNext<cr>" }
+  maps.n["<C-x>"] = { "<cmd>bd<cr>", desc = "Kill buffer" }
 end
 
 -- Mason
@@ -69,26 +69,33 @@ if is_available "mason.nvim" then
   maps.n["<leader>pm"] = { "<cmd>Mason<cr>", desc = "Mason Installer" }
 end
 
--- Lsp
-maps.n["<leader>l"] = { desc = get_icon("ActiveLSP", 1, true) .. "LSP" }
-maps.n["<leader>ld"] = { function() vim.diagnostic.open_float() end, desc = "Hover diagnostics" }
-if is_available("telescope.nvim") then
-  maps.n["<leader>lD"] = { function() require("telescope.builtin").diagnostics() end, desc = "Search diagnostics" }
+-- Gitsigns
+if is_available "gitsigns.nvim" then
+  maps.n["<leader>g"] = { desc = get_icon("Git", 1, true) .. "Git" }
+  maps.n["]g"] = { function() require("gitsigns").next_hunk() end, desc = "Next Git hunk" }
+  maps.n["[g"] = { function() require("gitsigns").prev_hunk() end, desc = "Previous Git hunk" }
+  maps.n["<leader>gl"] = { function() require("gitsigns").blame_line() end, desc = "View Git blame" }
+  maps.n["<leader>gL"] = { function() require("gitsigns").blame_line { full = true } end, desc = "View full Git blame" }
+  maps.n["<leader>gp"] = { function() require("gitsigns").preview_hunk() end, desc = "Preview Git hunk" }
+  maps.n["<leader>gh"] = { function() require("gitsigns").reset_hunk() end, desc = "Reset Git hunk" }
+  maps.n["<leader>gr"] = { function() require("gitsigns").reset_buffer() end, desc = "Reset Git buffer" }
+  maps.n["<leader>gs"] = { function() require("gitsigns").stage_hunk() end, desc = "Stage Git hunk" }
+  maps.n["<leader>gS"] = { function() require("gitsigns").stage_buffer() end, desc = "Stage Git buffer" }
+  maps.n["<leader>gu"] = { function() require("gitsigns").undo_stage_hunk() end, desc = "Unstage Git hunk" }
+  maps.n["<leader>gd"] = { function() require("gitsigns").diffthis() end, desc = "View Git diff" }
 end
-maps.n["<leader>la"] = {
-  function() vim.lsp.buf.code_action() end,
-  desc = "LSP code action",
-}
-maps.v["<leader>la"] = maps.n["<leader>la"]
-maps.n["<leader>lf"] = {
-  function()
-    vim.lsp.buf.format({
-      format_on_save = { enabled = true }, disabled = {}
-    })
-  end,
-  desc = "Format buffer",
-}
-maps.v["<leader>lf"] = maps.n["<leader>lf"]
+
+-- Comment
+if is_available "Comment.nvim" then
+  maps.n["<leader>/"] = {
+    function() require("Comment.api").toggle.linewise.count(vim.v.count > 0 and vim.v.count or 1) end,
+    desc = "Toggle comment line",
+  }
+  maps.v["<leader>/"] = {
+    "<esc><cmd>lua require('Comment.api').toggle.linewise(vim.fn.visualmode())<cr>",
+    desc = "Toggle comment for selection",
+  }
+end
 
 
 utils.set_mappings(maps)
