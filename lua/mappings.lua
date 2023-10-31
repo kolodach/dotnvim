@@ -97,5 +97,8 @@ if is_available "Comment.nvim" then
   }
 end
 
+-- Orgmode
+maps.n["<leader>o"] = { desc = get_icon("Org", 1, true) .. "Org" }
+
 
 utils.set_mappings(maps)

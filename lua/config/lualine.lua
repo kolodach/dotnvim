@@ -1,12 +1,3 @@
-local function show_macro_recording()
-  local recording_register = vim.fn.reg_recording()
-  if recording_register == "" then
-    return ""
-  else
-    return "Recording @" .. recording_register
-  end
-end
-
 return function(_, _)
   local get_icon = require("utils").get_icon
 
@@ -47,10 +38,6 @@ return function(_, _)
       lualine_b = { "branch", "diff", "diagnostics" },
       lualine_c = {
         "filename",
-        {
-          "macro-recording",
-          fmt = show_macro_recording,
-        },
         "searchcount",
       },
       lualine_x = {

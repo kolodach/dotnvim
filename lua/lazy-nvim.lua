@@ -18,5 +18,6 @@ require("lazy").setup({
   require("plugins.comments"),
   require("plugins.copilot"),
   require("plugins.nvim-cmp"),
+  require("plugins.orgmode"),
   -- require("plugins.lsp"),
 })

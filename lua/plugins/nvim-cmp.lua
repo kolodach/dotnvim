@@ -116,6 +116,7 @@ return {
           { name = "luasnip",  priority = 750 },
           { name = "buffer",   priority = 500 },
           { name = "path",     priority = 250 },
+          { name = "orgmode",  priority = 150 },
           {
             name = "copilot",
             group_index = 1,
