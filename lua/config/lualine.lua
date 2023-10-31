@@ -8,6 +8,21 @@ local function show_macro_recording()
 end
 
 return function(_, _)
+  local get_icon = require("utils").get_icon
+
+  local function copilot_status()
+    local c = require("copilot.client")
+
+    if c.is_disabled() then
+      return get_icon("CopilotErr")
+    end
+    local client = c.get()
+    if not client then
+      return get_icon("CopilotErr")
+    end
+    return get_icon("Copilot")
+  end
+
   require("lualine").setup({
     options = {
       icons_enabled = true,
@@ -39,6 +54,10 @@ return function(_, _)
         "searchcount",
       },
       lualine_x = {
+        {
+          "copilot",
+          fmt = copilot_status,
+        },
         "encoding",
         "fileformat",
         "filetype",
