@@ -12,7 +12,8 @@ return {
     },
     config = function(_, opts)
       if opts then require("luasnip").config.setup(opts) end
-      vim.tbl_map(function(type) require("luasnip.loaders.from_" .. type).lazy_load() end, { "vscode", "snipmate", "lua" })
+      vim.tbl_map(function(type) require("luasnip.loaders.from_" .. type).lazy_load() end,
+        { "vscode", "snipmate", "lua" })
     end
   },
   {
@@ -104,6 +105,11 @@ return {
           { name = "luasnip",  priority = 750 },
           { name = "buffer",   priority = 500 },
           { name = "path",     priority = 250 },
+          {
+            name = "copilot",
+            group_index = 1,
+            priority = 100,
+          }
         },
       }
     end,
