@@ -3,6 +3,21 @@ local M = {}
 local utils = require("utils")
 local get_icon = utils.get_icon
 
+local function add_buffer_autocmd(augroup, bufnr, autocmds)
+  if not vim.tbl_islist(autocmds) then autocmds = { autocmds } end
+  local cmds_found, cmds = pcall(vim.api.nvim_get_autocmds, { group = augroup, buffer = bufnr })
+  if not cmds_found or vim.tbl_isempty(cmds) then
+    vim.api.nvim_create_augroup(augroup, { clear = false })
+    for _, autocmd in ipairs(autocmds) do
+      local events = autocmd.events
+      autocmd.events = nil
+      autocmd.group = augroup
+      autocmd.buffer = bufnr
+      vim.api.nvim_create_autocmd(events, autocmd)
+    end
+  end
+end
+
 M.on_attach = function(client, bufnr)
   local maps = utils.empty_map_table()
   local is_available = utils.is_available
@@ -14,15 +29,41 @@ M.on_attach = function(client, bufnr)
     desc = "LSP code action",
   }
   maps.v["<leader>la"] = maps.n["<leader>la"]
-  maps.n["<leader>lf"] = {
-    function()
-      vim.lsp.buf.format({
-        format_on_save = { enabled = true }, disabled = {}
+  if client.supports_method "textDocument/formatting" then
+    maps.n["<leader>lf"] = {
+      function()
+        vim.lsp.buf.format({
+          format_on_save = { enabled = true }, disabled = {}
+        })
+      end,
+      desc = "Format buffer",
+    }
+    maps.v["<leader>lf"] = maps.n["<leader>lf"]
+
+    local autoformat = vim.g.autoformat or false
+    if autoformat then
+      add_buffer_autocmd("lsp_auto_format", bufnr, {
+        events = "BufWritePre",
+        desc = "autoformat on save",
+        callback = function()
+          if not (vim.g.autoformat or false) then return end
+          vim.lsp.buf.format({
+            format_on_save = { enabled = true }, disabled = {}
+          })
+        end,
       })
-    end,
-    desc = "Format buffer",
-  }
-  maps.v["<leader>lf"] = maps.n["<leader>lf"]
+    end
+    maps.n["<leader>uf"] = {
+      function()
+        vim.g.autoformat = not vim.g.autoformat
+        require("notify")("Autoformatting " .. (vim.g.autoformat and "enabled" or "disabled"),
+          vim.log.levels.INFO, {
+            title = "Settings"
+          })
+      end,
+      desc = "Toggle autoformatting (global)",
+    }
+  end
 
   if client.supports_method "textDocument/definition" then
     maps.n["gd"] = {
@@ -107,7 +148,6 @@ M.on_attach = function(client, bufnr)
       end
     end
   end
-
 
   utils.set_mappings(maps, { buffer = bufnr })
 end

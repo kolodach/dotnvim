@@ -97,8 +97,18 @@ if is_available "Comment.nvim" then
   }
 end
 
--- Orgmode
-maps.n["<leader>o"] = { desc = get_icon("Org", 1, true) .. "Org" }
-
+-- UI/UX
+maps.n["<leader>u"] = { desc = get_icon("Window", 1, true) .. "UI/UX" }
+maps.n["<leader>uw"] = {
+  function()
+    -- vim.cmd("set wrap!")
+    vim.o.wrap = not vim.o.wrap
+    require("notify")("Line wrap " .. (vim.o.wrap and "enabled" or "disabled"),
+      vim.log.levels.INFO, {
+        title = "Settings"
+      })
+  end,
+  desc = "Toggle wrap"
+}
 
 utils.set_mappings(maps)
